@@ -1,0 +1,38 @@
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	load_context(load_context)
+	merge_screening(merge_screening)
+	generate_certification_report(generate_certification_report)
+	check_pending(check_pending)
+	human_review(human_review)
+	finalize(finalize)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> load_context;
+	check_pending -.-> finalize;
+	check_pending -.-> human_review;
+	generate_certification_report -.-> check_pending;
+	generate_certification_report -.-> vendor_downstream\3atechnical_evaluation;
+	human_review --> merge_screening;
+	load_context -.-> screen_vendor\3averify_documents;
+	merge_screening --> generate_certification_report;
+	screen_vendor\3ascreen_certificates --> merge_screening;
+	vendor_downstream\3acommercial_evaluation --> check_pending;
+	finalize --> __end__;
+	subgraph screen_vendor
+	screen_vendor\3averify_documents(verify_documents)
+	screen_vendor\3ascreen_certificates(screen_certificates)
+	screen_vendor\3averify_documents --> screen_vendor\3ascreen_certificates;
+	end
+	subgraph vendor_downstream
+	vendor_downstream\3atechnical_evaluation(technical_evaluation)
+	vendor_downstream\3acommercial_evaluation(commercial_evaluation)
+	vendor_downstream\3atechnical_evaluation --> vendor_downstream\3acommercial_evaluation;
+	end
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc

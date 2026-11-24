@@ -1,0 +1,109 @@
+{
+  "_note": "Ground truth written by the generator, independent of the system under test. SYNTHETIC data.",
+  "as_of": "2026-11-23",
+  "tender_requirements": [
+    {
+      "standard": "AS9100",
+      "version": "D",
+      "category": "X",
+      "mandatory": true
+    },
+    {
+      "standard": "ISO 14001",
+      "version": "2015",
+      "category": "Y",
+      "mandatory": true
+    }
+  ],
+  "tender_criteria": {
+    "technical": [
+      "maximum operating pressure >= 250 bar",
+      "weight <= 15 kg"
+    ],
+    "commercial": [
+      "delivery <= 90 days",
+      "quotation validity >= 60 days"
+    ]
+  },
+  "vendors": {
+    "A": {
+      "label": "A",
+      "name": "Alpha Aerospace Pvt Ltd",
+      "certification": "PASS",
+      "findings": {
+        "AS9100": "COMPLIANT",
+        "ISO 14001": "COMPLIANT"
+      },
+      "total_price": 1000000,
+      "downstream": true,
+      "technical": "QUALIFIED",
+      "commercial": "VALID"
+    },
+    "B": {
+      "label": "B",
+      "name": "Beta Precision Works Ltd",
+      "certification": "FAIL",
+      "findings": {
+        "AS9100": "COMPLIANT",
+        "ISO 14001": "MISSING"
+      },
+      "total_price": 920000,
+      "downstream": false
+    },
+    "C": {
+      "label": "C",
+      "name": "Gamma Hydraulics Ltd",
+      "certification": "PASS",
+      "findings": {
+        "AS9100": "COMPLIANT",
+        "ISO 14001": "COMPLIANT"
+      },
+      "total_price": 1150000,
+      "downstream": true,
+      "technical": "QUALIFIED",
+      "commercial": "VALID",
+      "needs_ocr": true
+    },
+    "D": {
+      "label": "D",
+      "name": "Delta Fluid Systems Ltd",
+      "certification": "FAIL",
+      "findings": {
+        "AS9100": "COMPLIANT",
+        "ISO 14001": "EXPIRED"
+      },
+      "total_price": 980000,
+      "downstream": false
+    },
+    "E": {
+      "label": "E",
+      "name": "Echo Engineering Ltd",
+      "certification": "PENDING_HUMAN_REVIEW",
+      "findings": {
+        "AS9100": "COMPLIANT",
+        "ISO 14001": "NEEDS_HUMAN_REVIEW"
+      },
+      "total_price": 1080000,
+      "downstream": false,
+      "after_review": {
+        "certification": "PASS",
+        "downstream": true,
+        "technical": "QUALIFIED",
+        "commercial": "VALID"
+      }
+    }
+  },
+  "never_downstream": [
+    "B",
+    "D"
+  ],
+  "ranking_before_review": [
+    "A",
+    "C"
+  ],
+  "ranking_after_review": [
+    "A",
+    "E",
+    "C"
+  ]
+}
