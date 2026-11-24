@@ -281,3 +281,21 @@ def test_screening_failure_leaves_no_eligibility(client, setup, tmp_path):
     client.app.dependency_overrides[get_llm] = lambda: Boom()
     V = add_vendor(client, tmp_path, setup, "Alpha Aero", [cert("Alpha Aero Ltd", "AS9100 Rev D", "Valid until 2028-06-30")])
     assert V["screening_status"] == "FAILED" and V["eligibility"] is None and "model crashed" in V["screening_error"]
+
+
+def test_fallback_finds_the_expired_certificate_when_the_model_picks_the_wrong_one():
+    from app.services.vendor_service import fallback_certificates
+    from app.rag.chunker import Chunk
+    from app.rag.service import SearchHit
+
+    def hit(text):
+        return SearchHit(Chunk(chunk_id="c", document_id="d", document_name="x.pdf", document_category="OTHER_CERTIFICATION",
+                               page_number=1, text=text, vendor_id="v"), 0.5)
+
+    expired = hit("Certificate of Registration - ISO 14001:2015\r\nCERTIFICATE OF REGISTRATION\r\nThis is to certify that Orion Ltd is certified to ISO 14001:2015.\nValid until 2025-08-31")
+    other = hit("This is to certify that Orion Ltd is certified to AS9100 Rev D.\nValid until 2028-09-30")
+    out = fallback_certificates("ISO 14001", [other, expired])
+    assert len(out) == 1
+    assert out[0].supporting_text == "This is to certify that Orion Ltd is certified to ISO 14001:2015."
+    assert out[0].expiry_text == "Valid until 2025-08-31" and out[0].holder_name == "Orion Ltd"
+    assert fallback_certificates("ISO 45001", [other, expired]) == []

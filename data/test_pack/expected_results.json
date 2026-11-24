@@ -1,0 +1,31 @@
+{
+  "synthetic": true,
+  "tender": "SAPA/RFQ/2026/EHA-020",
+  "certificate_outcomes": {
+    "Meridian Aerodynamics Pvt Ltd": "PASS",
+    "Orion Precision Systems Ltd": "FAIL (ISO 14001:2015 expired 2025-08-31)",
+    "Vertex Hydromechanics Ltd": "PASS (via OCR of scanned certificates)"
+  },
+  "never_downstream": [
+    "Orion Precision Systems Ltd"
+  ],
+  "technical": {
+    "Meridian Aerodynamics Pvt Ltd": "QUALIFIED",
+    "Vertex Hydromechanics Ltd": "QUALIFIED"
+  },
+  "commercial": {
+    "Meridian Aerodynamics Pvt Ltd": {
+      "total_price": 4700000,
+      "delivery_days": 90
+    },
+    "Vertex Hydromechanics Ltd": {
+      "total_price": 5240000,
+      "delivery_days": 110
+    }
+  },
+  "ranking": [
+    "Meridian Aerodynamics Pvt Ltd",
+    "Vertex Hydromechanics Ltd"
+  ],
+  "note": "Orion Precision Systems Ltd has the lowest price (4,100,000) but failed certification, so it must never be evaluated or ranked."
+}

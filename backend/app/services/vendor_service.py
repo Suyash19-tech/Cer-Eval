@@ -1,6 +1,7 @@
 """Vendor intake, certificate screening, human review. Statuses are set here by deterministic code only."""
 
 import logging
+import re
 from collections.abc import Callable
 from datetime import date
 from pathlib import Path
@@ -16,6 +17,7 @@ from app.document_processing.service import DocumentIntake
 from app.document_processing.upload_safety import sanitize_filename
 from app.models import CertificateFinding, Document, Evaluation, ReviewDecision, TenderRequirement, Vendor
 from app.rag.service import RagService
+from app.schemas.certificates import LLMCertificate
 from app.schemas.enums import EligibilityStatus, ValidationStatus, WorkflowStatus
 from app.schemas.requirements import RequirementCategory
 from app.screening.gate import decide_eligibility
@@ -84,6 +86,29 @@ def _vendor_pages_text(db: Session, vendor_id: str) -> list[str]:
     return [p["text"] for d in docs for p in (d.pages or [])]
 
 
+_EXPIRY = re.compile(r"(?:valid\s+(?:until|till|up\s*to|through)|expir\w*(?:\s+(?:on|date))?\s*:?)\s*[0-9A-Za-z][0-9A-Za-z ,/.\-]{3,24}?"
+                     r"(?=\s{2,}|\n|$|\.\s|\s(?:Issued|Certificate|Scope)\b)", re.I)
+_HOLDER = re.compile(r"certif\w+\s+that\s+(.+?)\s+(?:is|has been|are)\s+certified", re.I)
+
+
+def fallback_certificates(token: str, hits: list) -> list[LLMCertificate]:
+    """Deterministic backstop for a weak model: build candidates straight from retrieved text that names the required
+    standard. Text is copied verbatim, so it passes the same grounding and validation as a model proposal."""
+    out = []
+    for h in hits:
+        text = h.chunk.text
+        units = [u.strip() for u in re.split(r"\n|(?<=[.!?])\s+", text) if u.strip()]
+        named = [u for u in units if token_in(token, u) and "certif" in u.lower()]
+        quote = next((u for u in named if _HOLDER.search(u)), named[0] if named else None)  # prefer the sentence naming the holder
+        if quote is None:
+            continue
+        m = _EXPIRY.search(text)
+        expiry = m.group(0).strip().rstrip(".") if m else None
+        holder = _HOLDER.search(quote)
+        out.append(LLMCertificate(holder_name=holder.group(1) if holder else None, supporting_text=quote, expiry_text=expiry))
+    return out[:4]
+
+
 def screen_requirement(
     spec: RequirementSpec, *, vendor: Vendor, all_text: list[str], rag: RagService, llm: StructuredLLM,
     as_of: date, global_conditions: list[str],
@@ -97,6 +122,8 @@ def screen_requirement(
     label = " ".join(x for x in (spec.certificate_name, spec.standard, spec.version) if x)
     hits = rag.search(vendor.evaluation_id, vendor.id, f"{label} certificate", k=TOP_K)
     proposals = propose_certificates(llm, label, hits)
+    if not any(token_in(token, p.supporting_text) for p in proposals):  # model missed or picked another standard
+        proposals = fallback_certificates(token, hits) or proposals  # off-target model quotes are dropped
     if not proposals:
         return Verdict(ValidationStatus.NEEDS_HUMAN_REVIEW,
                        [f"'{token}' is mentioned in the documents but no certificate was identified"])
